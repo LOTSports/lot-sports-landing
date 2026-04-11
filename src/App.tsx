@@ -319,36 +319,19 @@ export default function App() {
     if (!saved) return defaultData;
     try {
       const parsed = JSON.parse(saved);
-      // Validação robusta: garante que todas as seções principais existam
-      const requiredKeys: (keyof LandingData)[] = [
-        'branding', 'textos', 'precos', 'botoes', 
-        'midia', 'depoimentos', 'beneficios', 'faq', 'redes', 'comoFunciona'
-      ];
       
-      const isValid = requiredKeys.every(key => parsed[key] !== undefined);
-      
-      if (!isValid) {
-        console.warn('Estrutura de dados incompatível detectada. Resetando para o padrão.');
-        return defaultData;
-      }
-
-      // Migração de benefícios (string[] para {titulo, descricao}[])
-      if (parsed.beneficios && parsed.beneficios.length > 0 && typeof parsed.beneficios[0] === 'string') {
-        parsed.beneficios = parsed.beneficios.map((titulo: string) => ({
-          titulo,
-          descricao: "Qualidade premium garantida em cada costura."
-        }));
-      }
-
-      // Migração de depoimentos (remover campo foto)
-      if (parsed.depoimentos && parsed.depoimentos.length > 0) {
-        parsed.depoimentos = parsed.depoimentos.map((dep: any) => {
-          const { foto, ...rest } = dep;
-          return rest;
-        });
-      }
-
-      return parsed;
+      // Merge com defaultData para garantir que todas as chaves existam (evita erros de undefined)
+      return {
+        ...defaultData,
+        ...parsed,
+        branding: { ...defaultData.branding, ...parsed.branding },
+        textos: { ...defaultData.textos, ...parsed.textos },
+        precos: { ...defaultData.precos, ...parsed.precos },
+        botoes: { ...defaultData.botoes, ...parsed.botoes },
+        midia: { ...defaultData.midia, ...parsed.midia },
+        redes: { ...defaultData.redes, ...parsed.redes },
+        comoFunciona: { ...defaultData.comoFunciona, ...parsed.comoFunciona }
+      };
     } catch (e) {
       return defaultData;
     }
@@ -382,7 +365,19 @@ export default function App() {
             console.log('Nenhuma configuração encontrada no Supabase. Usando dados locais.');
           }
         } else if (dbData?.data) {
-          setData(dbData.data);
+          // Merge robusto: garante que novas chaves do defaultData existam mesmo que o DB esteja desatualizado
+          const mergedData = {
+            ...defaultData,
+            ...dbData.data,
+            branding: { ...defaultData.branding, ...dbData.data.branding },
+            textos: { ...defaultData.textos, ...dbData.data.textos },
+            precos: { ...defaultData.precos, ...dbData.data.precos },
+            botoes: { ...defaultData.botoes, ...dbData.data.botoes },
+            midia: { ...defaultData.midia, ...dbData.data.midia },
+            redes: { ...defaultData.redes, ...dbData.data.redes },
+            comoFunciona: { ...defaultData.comoFunciona, ...dbData.data.comoFunciona }
+          };
+          setData(mergedData);
         }
       } catch (err) {
         console.error('Erro inesperado ao carregar dados:', err);
@@ -455,7 +450,7 @@ export default function App() {
       <header className="fixed top-0 left-0 w-full z-50 bg-brand-dark/80 backdrop-blur-md border-b border-white/5">
         <div className="container mx-auto px-6 h-20 flex items-center justify-between">
           <div className="text-2xl font-black tracking-tighter text-white italic">
-            {data.branding.nomeLoja.split(' ')[0]}<span className="text-brand-red">{data.branding.nomeLoja.split(' ')[1]}</span>
+            {(data.branding?.nomeLoja || 'LOT Sports').split(' ')[0]}<span className="text-brand-red">{(data.branding?.nomeLoja || 'LOT Sports').split(' ')[1] || ''}</span>
           </div>
           <nav className="hidden md:flex items-center gap-8">
             <a href="#oferta" className="text-[10px] font-black uppercase italic text-zinc-400 hover:text-brand-red transition-colors tracking-widest">Oferta</a>
@@ -605,7 +600,7 @@ export default function App() {
               <div className="absolute top-0 left-0 w-full h-1 bg-brand-green"></div>
               <div className="mb-10">
                 <span className="text-brand-green font-black italic uppercase tracking-widest text-xs block mb-2">VENCEDOR</span>
-                <h3 className="text-3xl font-black italic text-white">CAMISA {data.branding.nomeLoja.toUpperCase()}</h3>
+                <h3 className="text-3xl font-black italic text-white">CAMISA {(data.branding?.nomeLoja || 'LOT Sports').toUpperCase()}</h3>
               </div>
               <div className="space-y-8">
                 <div className="text-7xl font-black italic text-white scoreboard-font leading-none">
@@ -1203,7 +1198,7 @@ export default function App() {
                         <div className="space-y-4">
                           <input 
                             type="text" 
-                            value={data.branding.nomeLoja || ''}
+                            value={data.branding?.nomeLoja || ''}
                             onChange={(e) => updateLocalData({ ...data, branding: { ...data.branding, nomeLoja: e.target.value } })}
                             placeholder="Nome da Loja"
                             className="w-full bg-black border border-white/10 rounded-lg p-3 text-sm focus:border-brand-red outline-none transition-colors"
