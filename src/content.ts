@@ -40,13 +40,14 @@ export interface LandingData {
     hero_whatsapp_texto: string;
     hero_whatsapp_link: string;
     hero_site_texto: string;
-    hero_site_link: string;
+    hero_link: string; // Master link
+    hero_site_link?: string; // Legacy
     oferta_cta_texto: string;
     oferta_cta_link: string;
     final_whatsapp_texto: string;
     final_whatsapp_link: string;
     final_site_texto: string;
-    final_site_link: string;
+    final_site_link?: string; // Legacy
   };
   midia: {
     video_vsl: string;
@@ -118,13 +119,12 @@ export const defaultData: LandingData = {
     hero_whatsapp_texto: "Falar no WhatsApp",
     hero_whatsapp_link: "https://wa.me/5511999999999",
     hero_site_texto: "QUERO MINHA CAMISA AGORA",
-    hero_site_link: "https://lotsports.com.br",
+    hero_link: "https://lotsports.com.br",
     oferta_cta_texto: "GARANTIR MINHAS CAMISAS",
     oferta_cta_link: "https://lotsports.com.br",
     final_whatsapp_texto: "FALAR NO WHATSAPP",
     final_whatsapp_link: "https://wa.me/5511999999999",
     final_site_texto: "COMPRAR AGORA",
-    final_site_link: "https://lotsports.com.br"
   },
   midia: {
     video_vsl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
@@ -151,20 +151,20 @@ export const defaultData: LandingData = {
   ],
   beneficios: [
     {
+      titulo: "Taxas e impostos por nossa conta",
+      descricao: "Você paga apenas o valor anunciado. Nós cuidamos de toda a burocracia e impostos de importação."
+    },
+    {
+      titulo: "Frete grátis para todo Brasil",
+      descricao: "Entrega segura e rastreada sem custo adicional para qualquer cidade do país."
+    },
+    {
       titulo: "Conforto premium com tecnologia Dry-Fit",
       descricao: "Tecido leve que não esquenta e mantém seu corpo seco mesmo nos dias mais quentes."
     },
     {
-      titulo: "Tecido respirável e leve",
-      descricao: "Material que permite ventilação constante, ideal para uso no dia a dia ou para jogar bola."
-    },
-    {
       titulo: "Alta durabilidade (não desbota)",
       descricao: "Cores vivas mesmo após várias lavagens, sem desbotar ou perder qualidade."
-    },
-    {
-      titulo: "Modelagem fiel às originais",
-      descricao: "Mesmo caimento e design das camisas oficiais, com acabamento detalhado."
     }
   ],
   faq: [

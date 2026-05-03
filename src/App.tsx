@@ -20,6 +20,7 @@ import {
   ArrowRight,
   Play,
   Settings,
+  CircleDollarSign,
   X,
   Save,
   Plus,
@@ -320,6 +321,11 @@ export default function App() {
     try {
       const parsed = JSON.parse(saved);
       
+      // Migração: se hero_link não existir mas hero_site_link sim (legado), copiar o valor
+      if (parsed.botoes && !parsed.botoes.hero_link && parsed.botoes.hero_site_link) {
+        parsed.botoes.hero_link = parsed.botoes.hero_site_link;
+      }
+
       // Merge com defaultData para garantir que todas as chaves existam (evita erros de undefined)
       return {
         ...defaultData,
@@ -366,16 +372,23 @@ export default function App() {
           }
         } else if (dbData?.data) {
           // Merge robusto: garante que novas chaves do defaultData existam mesmo que o DB esteja desatualizado
+          const dbConfig = dbData.data;
+          
+          // Migração: se hero_link não existir mas hero_site_link sim (legado), copiar o valor
+          if (!dbConfig.botoes.hero_link && dbConfig.botoes.hero_site_link) {
+            dbConfig.botoes.hero_link = dbConfig.botoes.hero_site_link;
+          }
+
           const mergedData = {
             ...defaultData,
-            ...dbData.data,
-            branding: { ...defaultData.branding, ...dbData.data.branding },
-            textos: { ...defaultData.textos, ...dbData.data.textos },
-            precos: { ...defaultData.precos, ...dbData.data.precos },
-            botoes: { ...defaultData.botoes, ...dbData.data.botoes },
-            midia: { ...defaultData.midia, ...dbData.data.midia },
-            redes: { ...defaultData.redes, ...dbData.data.redes },
-            comoFunciona: { ...defaultData.comoFunciona, ...dbData.data.comoFunciona }
+            ...dbConfig,
+            branding: { ...defaultData.branding, ...dbConfig.branding },
+            textos: { ...defaultData.textos, ...dbConfig.textos },
+            precos: { ...defaultData.precos, ...dbConfig.precos },
+            botoes: { ...defaultData.botoes, ...dbConfig.botoes },
+            midia: { ...defaultData.midia, ...dbConfig.midia },
+            redes: { ...defaultData.redes, ...dbConfig.redes },
+            comoFunciona: { ...defaultData.comoFunciona, ...dbConfig.comoFunciona }
           };
           setData(mergedData);
         }
@@ -509,16 +522,21 @@ export default function App() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="flex flex-col sm:flex-row gap-6 w-full justify-center"
+              className="flex flex-col items-center gap-6 w-full justify-center"
             >
-              <a href={data.botoes.hero_site_link} className="btn-secondary py-6 px-12 text-xl group min-w-[280px]">
-                {data.botoes.hero_site_texto}
-                <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
-              </a>
-              <a href={data.redes.grupoVip} className="btn-primary bg-brand-green hover:bg-brand-green/90 border-brand-green shadow-brand-green/20 py-6 px-12 text-xl min-w-[280px] animate-pulse-green">
-                <Users className="w-6 h-6" />
-                ENTRAR NO GRUPO VIP
-              </a>
+              <div className="flex flex-col sm:flex-row gap-6 w-full justify-center">
+                <a href={data.botoes.hero_link} className="btn-secondary py-6 px-12 text-xl group min-w-[280px]">
+                  {data.botoes.hero_site_texto}
+                  <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
+                </a>
+                <a href={data.redes.grupoVip} className="btn-primary bg-brand-green hover:bg-brand-green/90 border-brand-green shadow-brand-green/20 py-6 px-12 text-xl min-w-[280px] animate-pulse-green">
+                  <Users className="w-6 h-6" />
+                  ENTRAR NO GRUPO VIP
+                </a>
+              </div>
+              <p className="text-brand-green font-black uppercase italic tracking-widest text-[10px] flex items-center gap-2">
+                <CheckCircle2 className="w-3 h-3" /> Sem taxas escondidas
+              </p>
             </motion.div>
           </div>
         </div>
@@ -675,9 +693,14 @@ export default function App() {
                 </div>
               </div>
 
-              <a href={data.botoes.oferta_cta_link} className="btn-primary w-full text-2xl py-8 shadow-[0_0_50px_rgba(37,211,102,0.4)] animate-pulse-green">
-                {data.botoes.oferta_cta_texto.toUpperCase()}
-              </a>
+              <div className="w-full space-y-4">
+                <a href={data.botoes.hero_link} className="btn-primary w-full text-2xl py-8 shadow-[0_0_50px_rgba(37,211,102,0.4)] animate-pulse-green">
+                  {data.botoes.oferta_cta_texto.toUpperCase()}
+                </a>
+                <p className="text-brand-green font-black italic uppercase tracking-widest text-xs flex items-center justify-center gap-2">
+                  <span className="text-xl">💰</span> Sem taxas extras — você não paga nada além do valor do produto
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -693,17 +716,31 @@ export default function App() {
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {(data.beneficios || []).map((ben, i) => {
-              const Icon = [ShieldCheck, Truck, RotateCcw, Award][i] || CheckCircle2;
+              const isTrustBuilder = i < 2; // Taxas e Frete
+              const Icon = [CircleDollarSign, Truck, Zap, ShieldCheck][i] || CheckCircle2;
+              
               return (
                 <motion.div 
                   key={i}
                   whileHover={{ scale: 1.05 }}
-                  className="glass-card p-10 border-white/5 hover:border-brand-red/30 transition-all group"
+                  className={`glass-card p-10 border-white/5 transition-all group ${
+                    isTrustBuilder ? 'hover:border-brand-green/30' : 'hover:border-brand-red/30'
+                  }`}
                 >
-                  <div className="w-16 h-16 bg-brand-red/10 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-brand-red group-hover:shadow-[0_0_30px_rgba(255,0,0,0.5)] transition-all">
-                    <Icon className="w-8 h-8 text-brand-red group-hover:text-white transition-colors" />
+                  <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-8 transition-all ${
+                    isTrustBuilder 
+                      ? 'bg-brand-green/10 group-hover:bg-brand-green group-hover:shadow-[0_0_30px_rgba(37,211,102,0.5)]' 
+                      : 'bg-brand-red/10 group-hover:bg-brand-red group-hover:shadow-[0_0_30px_rgba(255,0,0,0.5)]'
+                  }`}>
+                    <Icon className={`w-8 h-8 transition-colors ${
+                      isTrustBuilder 
+                        ? 'text-brand-green group-hover:text-white' 
+                        : 'text-brand-red group-hover:text-white'
+                    }`} />
                   </div>
-                  <h3 className="text-xl font-black italic uppercase mb-4 text-white group-hover:text-brand-red transition-colors">
+                  <h3 className={`text-xl font-black italic uppercase mb-4 text-white transition-colors ${
+                    isTrustBuilder ? 'group-hover:text-brand-green' : 'group-hover:text-brand-red'
+                  }`}>
                     {ben.titulo}
                   </h3>
                   <p className="text-zinc-500 text-sm leading-relaxed font-medium">
@@ -772,9 +809,9 @@ export default function App() {
                 </p>
                 <ul className="space-y-4">
                   {[
+                    'Ofertas exclusivas',
                     'Promoções antecipadas',
-                    'Modelos exclusivos',
-                    'Ofertas secretas'
+                    'Acesso prioritário'
                   ].map((item, i) => (
                     <li key={i} className="flex items-center gap-3 text-white font-black italic uppercase text-xs">
                       <div className="w-2 h-2 bg-brand-green rounded-full shadow-[0_0_10px_rgba(37,211,102,0.8)]"></div>
@@ -797,7 +834,6 @@ export default function App() {
                 >
                   QUERO ENTRAR AGORA
                 </a>
-                <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest italic">Mais de 12.400 membros ativos no WhatsApp</p>
               </div>
             </div>
           </div>
@@ -815,7 +851,7 @@ export default function App() {
               </h2>
               <p className="text-zinc-500 uppercase font-black tracking-[0.3em] text-xs">Os mantos que estão dominando os estádios.</p>
             </div>
-            <a href={data.botoes.hero_site_link} className="btn-outline py-4 px-10 text-sm border-brand-red/30 hover:border-brand-red">VER TODOS OS MODELOS</a>
+            <a href={data.botoes.hero_link} className="btn-outline py-4 px-10 text-sm border-brand-red/30 hover:border-brand-red">VER TODOS OS MODELOS</a>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -1039,7 +1075,7 @@ export default function App() {
             </motion.div>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-              <a href={data.botoes.final_site_link} className="btn-primary py-8 px-16 text-2xl shadow-[0_0_60px_rgba(37,211,102,0.4)] animate-pulse-green group w-full sm:w-auto">
+              <a href={data.botoes.hero_link} className="btn-primary py-8 px-16 text-2xl shadow-[0_0_60px_rgba(37,211,102,0.4)] animate-pulse-green group w-full sm:w-auto">
                 {data.botoes.final_site_texto}
                 <ArrowRight className="w-8 h-8 group-hover:translate-x-2 transition-transform" />
               </a>
@@ -1310,16 +1346,18 @@ export default function App() {
                             <input type="text" value={data.botoes.hero_whatsapp_texto || ''} onChange={(e) => updateLocalData({ ...data, botoes: { ...data.botoes, hero_whatsapp_texto: e.target.value } })} placeholder="Hero WhatsApp Texto" className="bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-brand-red" />
                             <input type="text" value={data.botoes.hero_whatsapp_link || ''} onChange={(e) => updateLocalData({ ...data, botoes: { ...data.botoes, hero_whatsapp_link: e.target.value } })} placeholder="Hero WhatsApp Link" className="bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-brand-red" />
                           </div>
+                          <div className="grid grid-cols-1 gap-2">
+                            <input type="text" value={data.botoes.hero_link || ''} onChange={(e) => updateLocalData({ ...data, botoes: { ...data.botoes, hero_link: e.target.value } })} placeholder="Link Principal (Site/Checkout)" className="bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-brand-red font-bold text-brand-green" />
+                          </div>
                           <div className="grid grid-cols-2 gap-2">
                             <input type="text" value={data.botoes.hero_site_texto || ''} onChange={(e) => updateLocalData({ ...data, botoes: { ...data.botoes, hero_site_texto: e.target.value } })} placeholder="Hero Site Texto" className="bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-brand-red" />
-                            <input type="text" value={data.botoes.hero_site_link || ''} onChange={(e) => updateLocalData({ ...data, botoes: { ...data.botoes, hero_site_link: e.target.value } })} placeholder="Hero Site Link" className="bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-brand-red" />
+                            <input type="text" value={data.botoes.final_site_texto || ''} onChange={(e) => updateLocalData({ ...data, botoes: { ...data.botoes, final_site_texto: e.target.value } })} placeholder="Final Site Texto" className="bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-brand-red" />
                           </div>
                           <div className="grid grid-cols-2 gap-2">
                             <input type="text" value={data.botoes.oferta_cta_texto || ''} onChange={(e) => updateLocalData({ ...data, botoes: { ...data.botoes, oferta_cta_texto: e.target.value } })} placeholder="Oferta CTA Texto" className="bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-brand-red" />
-                            <input type="text" value={data.botoes.oferta_cta_link || ''} onChange={(e) => updateLocalData({ ...data, botoes: { ...data.botoes, oferta_cta_link: e.target.value } })} placeholder="Oferta CTA Link" className="bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-brand-red" />
-                          </div>
-                          <div className="grid grid-cols-2 gap-2">
                             <input type="text" value={data.botoes.final_whatsapp_texto || ''} onChange={(e) => updateLocalData({ ...data, botoes: { ...data.botoes, final_whatsapp_texto: e.target.value } })} placeholder="Final WhatsApp Texto" className="bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-brand-red" />
+                          </div>
+                          <div className="grid grid-cols-1 gap-2">
                             <input type="text" value={data.botoes.final_whatsapp_link || ''} onChange={(e) => updateLocalData({ ...data, botoes: { ...data.botoes, final_whatsapp_link: e.target.value } })} placeholder="Final WhatsApp Link" className="bg-black border border-white/10 rounded p-2 text-xs outline-none focus:border-brand-red" />
                           </div>
                         </div>
