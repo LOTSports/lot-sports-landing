@@ -15,7 +15,7 @@ export default function Login({ onLogin }: LoginProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Validação hardcoded conforme pedido
-    if (username === 'admin' && password === 'uPEzaX60XX') {
+    if (username === 'ademiro' && password === 'NCa6M280bJ9pRwV') {
       onLogin();
     } else {
       setError('Senha incorreta');
@@ -61,7 +61,7 @@ export default function Login({ onLogin }: LoginProps) {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="w-full bg-black border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white outline-none focus:border-brand-red transition-colors"
-                  placeholder="admin"
+                  placeholder="ademiro"
                 />
               </div>
             </div>
