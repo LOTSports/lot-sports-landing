@@ -19,7 +19,6 @@ import {
   CheckCircle2, 
   ArrowRight,
   Play,
-  Settings,
   CircleDollarSign,
   X,
   Save,
@@ -343,6 +342,7 @@ export default function App() {
     }
   });
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [canAccessAdmin, setCanAccessAdmin] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -351,6 +351,13 @@ export default function App() {
 
   // Carregar dados do Supabase ao montar
   useEffect(() => {
+    // Verificar acesso secreto via URL (?admin=lot2026)
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('admin') === 'lot2026') {
+      setCanAccessAdmin(true);
+      setIsAdminOpen(true);
+    }
+
     const fetchData = async () => {
       if (!supabase) {
         console.log('Supabase não configurado. Usando dados locais.');
@@ -1161,14 +1168,6 @@ export default function App() {
         </div>
       </a>
 
-      {/* ⚙️ BOTÃO ADMIN */}
-      <button 
-        onClick={() => setIsAdminOpen(true)}
-        className="fixed bottom-8 left-8 z-50 w-12 h-12 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center backdrop-blur-md border border-white/10 transition-all shadow-2xl"
-      >
-        <Settings className="w-6 h-6" />
-      </button>
-
       {/* ✅ NOTIFICAÇÃO DE SUCESSO */}
       <AnimatePresence>
         {showSuccess && (
@@ -1186,7 +1185,7 @@ export default function App() {
 
       {/* 🛠️ PAINEL ADMIN / LOGIN */}
       <AnimatePresence>
-        {isAdminOpen && (
+        {canAccessAdmin && isAdminOpen && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

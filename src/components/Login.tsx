@@ -15,7 +15,7 @@ export default function Login({ onLogin }: LoginProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Validação hardcoded conforme pedido
-    if (username === 'admin' && password === '7777') {
+    if (username === 'admin' && password === 'uPEzaX60XX') {
       onLogin();
     } else {
       setError('Senha incorreta');
