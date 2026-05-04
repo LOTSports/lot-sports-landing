@@ -314,33 +314,7 @@ const CountdownTimer = () => {
 };
 
 export default function App() {
-  const [data, setData] = useState<LandingData>(() => {
-    const saved = localStorage.getItem('lotsports_landing_data');
-    if (!saved) return defaultData;
-    try {
-      const parsed = JSON.parse(saved);
-      
-      // Migração: se hero_link não existir mas hero_site_link sim (legado), copiar o valor
-      if (parsed.botoes && !parsed.botoes.hero_link && parsed.botoes.hero_site_link) {
-        parsed.botoes.hero_link = parsed.botoes.hero_site_link;
-      }
-
-      // Merge com defaultData para garantir que todas as chaves existam (evita erros de undefined)
-      return {
-        ...defaultData,
-        ...parsed,
-        branding: { ...defaultData.branding, ...parsed.branding },
-        textos: { ...defaultData.textos, ...parsed.textos },
-        precos: { ...defaultData.precos, ...parsed.precos },
-        botoes: { ...defaultData.botoes, ...parsed.botoes },
-        midia: { ...defaultData.midia, ...parsed.midia },
-        redes: { ...defaultData.redes, ...parsed.redes },
-        comoFunciona: { ...defaultData.comoFunciona, ...parsed.comoFunciona }
-      };
-    } catch (e) {
-      return defaultData;
-    }
-  });
+  const [data, setData] = useState<LandingData>(defaultData);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [canAccessAdmin, setCanAccessAdmin] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -356,58 +330,75 @@ export default function App() {
     if (params.get('admin') === 'lot2026') {
       setCanAccessAdmin(true);
       setIsAdminOpen(true);
+      
+      // Se for admin, tentar carregar do localStorage primeiro para preview imediato
+      const saved = localStorage.getItem('lotsports_landing_data');
+      if (saved) {
+        try {
+          setData(mergeWithDefault(JSON.parse(saved)));
+        } catch (e) {
+          console.error('Erro ao ler localStorage:', e);
+        }
+      }
     }
 
-    const fetchData = async () => {
-      if (!supabase) {
-        console.log('Supabase não configurado. Usando dados locais.');
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const { data: dbData, error } = await supabase
-          .from('config')
-          .select('data')
-          .eq('id', 1)
-          .single();
-
-        if (error) {
-          console.error('Erro ao buscar dados do Supabase:', error);
-          if (error.code === 'PGRST116') {
-            console.log('Nenhuma configuração encontrada no Supabase. Usando dados locais.');
-          }
-        } else if (dbData?.data) {
-          // Merge robusto: garante que novas chaves do defaultData existam mesmo que o DB esteja desatualizado
-          const dbConfig = dbData.data;
-          
-          // Migração: se hero_link não existir mas hero_site_link sim (legado), copiar o valor
-          if (!dbConfig.botoes.hero_link && dbConfig.botoes.hero_site_link) {
-            dbConfig.botoes.hero_link = dbConfig.botoes.hero_site_link;
-          }
-
-          const mergedData = {
-            ...defaultData,
-            ...dbConfig,
-            branding: { ...defaultData.branding, ...dbConfig.branding },
-            textos: { ...defaultData.textos, ...dbConfig.textos },
-            precos: { ...defaultData.precos, ...dbConfig.precos },
-            botoes: { ...defaultData.botoes, ...dbConfig.botoes },
-            midia: { ...defaultData.midia, ...dbConfig.midia },
-            redes: { ...defaultData.redes, ...dbConfig.redes },
-            comoFunciona: { ...defaultData.comoFunciona, ...dbConfig.comoFunciona }
-          };
-          setData(mergedData);
-        }
-      } catch (err) {
-        console.error('Erro inesperado ao carregar dados:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
+    fetchDataFromSupabase();
   }, []);
+
+  // Função robusta de merge para garantir que o app não quebre se o DB estiver desatualizado
+  const mergeWithDefault = (dbConfig: any): LandingData => {
+    if (!dbConfig) return defaultData;
+
+    // Migração de campos legados
+    if (dbConfig.botoes && !dbConfig.botoes.hero_link && dbConfig.botoes.hero_site_link) {
+      dbConfig.botoes.hero_link = dbConfig.botoes.hero_site_link;
+    }
+
+    return {
+      ...defaultData,
+      ...dbConfig,
+      branding: { ...defaultData.branding, ...(dbConfig.branding || {}) },
+      textos: { ...defaultData.textos, ...(dbConfig.textos || {}) },
+      precos: { ...defaultData.precos, ...(dbConfig.precos || {}) },
+      botoes: { ...defaultData.botoes, ...(dbConfig.botoes || {}) },
+      midia: { ...defaultData.midia, ...(dbConfig.midia || {}) },
+      redes: { ...defaultData.redes, ...(dbConfig.redes || {}) },
+      comoFunciona: { ...defaultData.comoFunciona, ...(dbConfig.comoFunciona || {}) },
+      // Arrays são substituídos se existirem
+      depoimentos: dbConfig.depoimentos || defaultData.depoimentos,
+      beneficios: dbConfig.beneficios || defaultData.beneficios,
+      faq: dbConfig.faq || defaultData.faq,
+      produtos: dbConfig.produtos || defaultData.produtos
+    };
+  };
+
+  const fetchDataFromSupabase = async () => {
+    if (!supabase) {
+      console.log('Supabase não configurado. Usando modo offline.');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const { data: dbData, error } = await supabase
+        .from('config')
+        .select('data')
+        .eq('id', 1)
+        .single();
+
+      if (error) {
+        console.error('Erro ao buscar dados do Supabase:', error);
+      } else if (dbData?.data) {
+        const mergedData = mergeWithDefault(dbData.data);
+        setData(mergedData);
+        console.log('Dados sincronizados com o Supabase com sucesso.');
+      }
+    } catch (err) {
+      console.error('Erro inesperado ao carregar dados:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const updateLocalData = (newData: LandingData) => {
     setData(newData);
