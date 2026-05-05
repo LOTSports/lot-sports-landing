@@ -170,6 +170,7 @@ const VSLPlayer = ({ url, thumbnail }: { url: string; thumbnail: string }) => {
       
       return (
         <iframe
+          id="video"
           src={`https://www.youtube.com/embed/${videoID}?autoplay=1&rel=0&modestbranding=1&showinfo=0`}
           className="absolute top-0 left-0 w-full h-full"
           allow="autoplay; encrypted-media"
@@ -325,34 +326,82 @@ export default function App() {
 
   // Carregar dados do Supabase ao montar
   useEffect(() => {
-    // Verificar acesso secreto via URL (?admin=lot2026)
+    // 1. Verificar acesso secreto (Admin)
     const params = new URLSearchParams(window.location.search);
     if (params.get('admin') === 'lot2026') {
       setCanAccessAdmin(true);
       setIsAdminOpen(true);
-      
-      // Se for admin, tentar carregar do localStorage primeiro para preview imediato
-      const saved = localStorage.getItem('lotsports_landing_data');
-      if (saved) {
-        try {
-          setData(mergeWithDefault(JSON.parse(saved)));
-        } catch (e) {
-          console.error('Erro ao ler localStorage:', e);
-        }
-      }
     }
 
-    fetchDataFromSupabase();
+    // 2. Carregar dados do Supabase (PARA TODOS)
+    fetchDataSync();
   }, []);
 
-  // Função robusta de merge para garantir que o app não quebre se o DB estiver desatualizado
+  const fetchDataSync = async () => {
+    if (!supabase) {
+      console.log('Sincronização desativada: Supabase não configurado.');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      
+      // Tentar buscar configuração principal (JSON)
+      const { data: dbData, error: jsonError } = await supabase
+        .from('config')
+        .select('data')
+        .eq('id', 1)
+        .single();
+
+      if (dbData?.data) {
+        const merged = mergeWithDefault(dbData.data);
+        setData(merged);
+        console.log('Sincronização OK (JSON)');
+        setIsLoading(false);
+        return;
+      }
+
+      // Se falhar o JSON, tentar buscar por chave/valor
+      const { data: kvData, error: kvError } = await supabase
+        .from('config')
+        .select('*');
+
+      if (kvData && kvData.length > 0) {
+        const obj: any = {};
+        kvData.forEach((item: any) => {
+          if (item.chave && item.valor) {
+            obj[item.chave] = item.valor;
+          }
+        });
+        
+        // Se conseguimos dados via KV, aplicamos os principais
+        // Nota: Isso é um fallback para campos isolados
+        console.log('Sincronização OK (K/V)', obj);
+        
+        // Re-mapear para a estrutura LandingData se possível, ou pelo menos atualizar o que temos
+        setData(prev => {
+          const newData = { ...prev };
+          if (obj.headline_principal) newData.textos.headline_principal = obj.headline_principal;
+          if (obj.hero_preco_destaque) newData.precos.hero_preco_destaque = obj.hero_preco_destaque;
+          if (obj.video_vsl) newData.midia.video_vsl = obj.video_vsl;
+          return newData;
+        });
+      }
+
+      if (jsonError && jsonError.code !== 'PGRST116') {
+        console.error('Erro na sincronização:', jsonError);
+      }
+    } catch (err) {
+      console.error('Erro crítico no carregamento:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Função robusta de merge
   const mergeWithDefault = (dbConfig: any): LandingData => {
     if (!dbConfig) return defaultData;
-
-    // Migração de campos legados
-    if (dbConfig.botoes && !dbConfig.botoes.hero_link && dbConfig.botoes.hero_site_link) {
-      dbConfig.botoes.hero_link = dbConfig.botoes.hero_site_link;
-    }
 
     return {
       ...defaultData,
@@ -364,40 +413,12 @@ export default function App() {
       midia: { ...defaultData.midia, ...(dbConfig.midia || {}) },
       redes: { ...defaultData.redes, ...(dbConfig.redes || {}) },
       comoFunciona: { ...defaultData.comoFunciona, ...(dbConfig.comoFunciona || {}) },
-      // Arrays são substituídos se existirem
+      // Arrays
       depoimentos: dbConfig.depoimentos || defaultData.depoimentos,
       beneficios: dbConfig.beneficios || defaultData.beneficios,
       faq: dbConfig.faq || defaultData.faq,
       produtos: dbConfig.produtos || defaultData.produtos
     };
-  };
-
-  const fetchDataFromSupabase = async () => {
-    if (!supabase) {
-      console.log('Supabase não configurado. Usando modo offline.');
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      const { data: dbData, error } = await supabase
-        .from('config')
-        .select('data')
-        .eq('id', 1)
-        .single();
-
-      if (error) {
-        console.error('Erro ao buscar dados do Supabase:', error);
-      } else if (dbData?.data) {
-        const mergedData = mergeWithDefault(dbData.data);
-        setData(mergedData);
-        console.log('Dados sincronizados com o Supabase com sucesso.');
-      }
-    } catch (err) {
-      console.error('Erro inesperado ao carregar dados:', err);
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   const updateLocalData = (newData: LandingData) => {
@@ -495,7 +516,7 @@ export default function App() {
                 </div>
               </div>
               
-              <h1 className="text-5xl md:text-8xl font-black leading-[0.85] italic uppercase tracking-tighter">
+              <h1 id="headline" className="text-5xl md:text-8xl font-black leading-[0.85] italic uppercase tracking-tighter">
                 {data.textos.headline_principal.split(' ').map((word, i) => (
                   <span key={i} className={i > 3 ? 'text-brand-red block md:inline' : ''}>{word} </span>
                 ))}
@@ -621,7 +642,7 @@ export default function App() {
               <div className="space-y-8">
                 <div className="text-7xl font-black italic text-white scoreboard-font leading-none">
                   <span className="text-brand-green text-3xl align-top mr-1">R$</span>
-                  {data.precos.comparativo_lot}
+                  <span id="preco">{data.precos.comparativo_lot}</span>
                 </div>
                 <div className="bg-brand-green/20 text-brand-green text-xs font-black py-2 px-6 rounded-sm inline-block italic uppercase tracking-widest border border-brand-green/30">
                   ECONOMIA DE {formatarBR(calcularEconomia(data.precos.comparativo_original, data.precos.comparativo_lot))} POR CAMISA

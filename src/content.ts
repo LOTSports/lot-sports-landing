@@ -89,8 +89,8 @@ export const defaultData: LandingData = {
     frete: "Frete grátis para todo o Brasil"
   },
   textos: {
-    headline_principal: "CAMISAS DE TIME COM QUALIDADE PROFISSIONAL SEM PAGAR PREÇO DE ORIGINAL",
-    subheadline_principal: "Qualidade premium + leve 3 pague 2 + frete grátis para todo o Brasil",
+    headline_principal: "CARREGANDO...",
+    subheadline_principal: "Os melhores mantos estão chegando...",
     comparativo_titulo: "POR QUE PAGAR MAIS CARO?",
     comparativo_subtitulo: "A mesma qualidade, por menos da metade do preço.",
     oferta_titulo: "LEVE 3, PAGUE 2",
@@ -107,13 +107,13 @@ export const defaultData: LandingData = {
     cta_final_subtitulo: "Leve 3, pague 2 ainda disponível. Escolha seu time agora."
   },
   precos: {
-    hero_preco_destaque: "161,49",
+    hero_preco_destaque: "---",
     hero_texto_destaque: "no Pix",
-    comparativo_original: "349,90",
-    comparativo_lot: "161,49",
-    oferta_preco_unitario: "107,66",
-    oferta_preco_total: "322,98",
-    oferta_parcelamento: "ou 12x de R$ 32,42"
+    comparativo_original: "---",
+    comparativo_lot: "---",
+    oferta_preco_unitario: "---",
+    oferta_preco_total: "---",
+    oferta_parcelamento: "Calculando parcelas..."
   },
   botoes: {
     hero_whatsapp_texto: "Falar no WhatsApp",
