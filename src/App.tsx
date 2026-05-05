@@ -30,6 +30,7 @@ import {
   TrendingDown,
   ShoppingBag,
   Check,
+  BadgeCheck,
   RefreshCw,
   Eye,
   LogOut,
@@ -152,6 +153,15 @@ const SafeImage = ({ src, alt, className, ...props }: any) => {
 const VSLPlayer = ({ url, thumbnail }: { url: string; thumbnail: string }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [viewers, setViewers] = useState(0);
+
+  useEffect(() => {
+    setViewers(Math.floor(Math.random() * (450 - 320 + 1)) + 320);
+    const interval = setInterval(() => {
+      setViewers(prev => prev + (Math.random() > 0.5 ? 1 : -1));
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   const isYouTube = url.includes('youtube.com') || url.includes('youtu.be');
   const isVimeo = url.includes('vimeo.com');
@@ -262,7 +272,7 @@ const VSLPlayer = ({ url, thumbnail }: { url: string; thumbnail: string }) => {
           <div className="absolute bottom-8 left-8 right-8 flex items-center justify-between">
              <div className="flex items-center gap-3">
                <div className="w-3 h-3 bg-brand-red rounded-full animate-pulse shadow-[0_0_10px_rgba(255,0,0,0.8)]"></div>
-               <span className="text-white text-sm font-black italic uppercase tracking-widest">Transmissão Exclusiva</span>
+               <span className="text-white text-sm font-black italic uppercase tracking-widest">{viewers} pessoas assistindo agora</span>
              </div>
              <span className="text-zinc-400 text-[10px] font-black uppercase tracking-widest">HD 1080P</span>
           </div>
@@ -323,6 +333,29 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [notification, setNotification] = useState<{name: string, city: string, product: string} | null>(null);
+
+  // Sistema de Notificações Fake
+  useEffect(() => {
+    const names = ["Carlos", "Lucas", "Mateus", "Gabriel", "Felipe", "Pedro", "João", "André"];
+    const cities = ["São Paulo", "Rio de Janeiro", "Belo Horizonte", "Curitiba", "Fortaleza", "Brasília", "Salvador"];
+    const products = ["Camisa Brasil Home", "Camisa Flamengo Home", "Camisa Real Madrid", "Camisa Inter Miami"];
+
+    const showNotification = () => {
+      const name = names[Math.floor(Math.random() * names.length)];
+      const city = cities[Math.floor(Math.random() * cities.length)];
+      const product = products[Math.floor(Math.random() * products.length)];
+      
+      setNotification({ name, city, product });
+      setTimeout(() => setNotification(null), 5000);
+    };
+
+    const interval = setInterval(() => {
+      if (Math.random() > 0.7) showNotification();
+    }, 15000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Carregar dados do Supabase ao montar
   useEffect(() => {
@@ -478,6 +511,15 @@ export default function App() {
   return (
     <div className="min-h-screen bg-brand-dark overflow-x-hidden">
       
+      {/* 🔥 BARRA DE AVISO TOPO */}
+      <div className="bg-brand-red py-2 px-4 text-center relative z-[60]">
+        <p className="text-[10px] md:text-xs font-black uppercase italic tracking-[0.2em] text-white flex items-center justify-center gap-3">
+          <Zap className="w-3 h-3 fill-current animate-pulse" />
+          MANTOS 2024/25 DISPONÍVEIS + LEVE 3 PAGUE 2 ATÉ ÀS 23:59 DE HOJE
+          <Zap className="w-3 h-3 fill-current animate-pulse" />
+        </p>
+      </div>
+
       {/* 🚀 HEADER FIXO */}
       <header className="fixed top-0 left-0 w-full z-50 bg-brand-dark/80 backdrop-blur-md border-b border-white/5">
         <div className="container mx-auto px-6 h-20 flex items-center justify-between">
@@ -498,6 +540,12 @@ export default function App() {
 
       {/* 🔥 HERO SECTION - ESTILO ESTÁDIO */}
       <section className="pt-32 pb-24 relative overflow-hidden bg-grass tactical-lines stadium-glow diagonal-cut-bottom">
+        <div className="container mx-auto px-6 relative z-10 text-center mb-8">
+           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-black/40 backdrop-blur-sm border border-white/10 rounded-full text-[10px] font-black uppercase italic text-zinc-300">
+             <Eye className="w-3 h-3 text-brand-red" />
+             482 pessoas vendo esta página agora
+           </div>
+        </div>
         <div className="container mx-auto px-6 relative z-10">
           <div className="flex flex-col items-center text-center max-w-5xl mx-auto space-y-12">
             <motion.div 
@@ -816,8 +864,13 @@ export default function App() {
             
             <div className="grid lg:grid-cols-2 gap-16 items-center relative z-10">
               <div className="space-y-8">
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-brand-green/10 border border-brand-green/30 rounded-sm text-brand-green text-[10px] font-black italic uppercase tracking-widest">
-                  <Zap className="w-4 h-4 fill-current" /> ACESSO EXCLUSIVO
+                <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-brand-green/10 border border-brand-green/30 rounded-sm text-brand-green text-[10px] font-black italic uppercase tracking-widest">
+                    <Zap className="w-4 h-4 fill-current" /> ACESSO EXCLUSIVO
+                  </div>
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-sm text-zinc-400 text-[10px] font-black italic uppercase tracking-widest">
+                    <Users className="w-4 h-4" /> +3.742 MEMBROS ATIVOS
+                  </div>
                 </div>
                 <h2 className="text-4xl md:text-7xl font-black italic uppercase tracking-tighter leading-none">
                   ENTRE PARA A <br/>
@@ -826,6 +879,9 @@ export default function App() {
                 <p className="text-zinc-400 text-lg font-medium leading-relaxed">
                   Faça parte do nosso Grupo VIP e receba lançamentos mundiais, promoções relâmpago e cupons secretos antes de todo mundo.
                 </p>
+                <div className="inline-block bg-brand-red/10 border border-brand-red/30 px-3 py-1 rounded text-[9px] font-black uppercase text-brand-red animate-pulse">
+                   🔥 VAGAS LIMITADAS HOJE
+                </div>
                 <ul className="space-y-4">
                   {[
                     'Ofertas exclusivas',
@@ -849,10 +905,12 @@ export default function App() {
                 </div>
                 <a 
                   href={data.redes.grupoVip} 
-                  className="btn-primary bg-brand-green hover:bg-brand-green/90 border-brand-green w-full py-8 text-2xl shadow-[0_0_50px_rgba(37,211,102,0.4)] animate-pulse-green"
+                  className="btn-primary bg-brand-green hover:bg-brand-green/90 border-brand-green w-full py-8 text-2xl shadow-[0_0_50px_rgba(37,211,102,0.4)] animate-pulse-green group"
                 >
-                  QUERO ENTRAR AGORA
+                  ENTRAR AGORA E GARANTIR VANTAGENS
+                  <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
                 </a>
+                <p className="text-[10px] text-zinc-500 font-black uppercase italic">Última vaga preenchida há 4 minutos</p>
               </div>
             </div>
           </div>
@@ -885,17 +943,38 @@ export default function App() {
                   <div className="aspect-[3/4] overflow-hidden relative">
                     <SafeImage src={produto.imagem} alt={produto.nome} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
                     <div className="absolute top-4 left-4 flex flex-col gap-2">
-                      <div className="bg-brand-red text-white text-[9px] font-black px-3 py-1 rounded-sm italic uppercase shadow-xl">🔥 Mais vendido</div>
-                      {i % 2 === 0 && <div className="bg-brand-green text-white text-[9px] font-black px-3 py-1 rounded-sm italic uppercase shadow-xl">⚡ Promoção ativa</div>}
+                      <div className="bg-brand-red text-white text-[9px] font-black px-3 py-1 rounded-sm italic uppercase shadow-xl flex items-center gap-1">
+                        <Zap className="w-3 h-3 fill-current" /> {produto.vendidosHoje || 'Destaque'}
+                      </div>
+                      <div className="bg-brand-green text-white text-[9px] font-black px-3 py-1 rounded-sm italic uppercase shadow-xl flex items-center gap-1">
+                        <Check className="w-3 h-3" /> {produto.estoque || 'Disponível'}
+                      </div>
                     </div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
+                    
+                    <div className="absolute bottom-4 left-4 right-4">
+                       <div className="bg-black/60 backdrop-blur-md rounded-lg p-2 flex items-center justify-center gap-2 border border-white/10 group-hover:bg-brand-red/80 transition-colors">
+                          <Truck className="w-3 h-3 text-brand-green group-hover:text-white" />
+                          <span className="text-[8px] font-black uppercase text-white tracking-widest">Entrega Expressa para todo Brasil 🇧🇷</span>
+                       </div>
+                    </div>
+
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-6 gap-4">
+                      <div className="text-white text-center space-y-2 translate-y-4 group-hover:translate-y-0 transition-transform">
+                        <p className="text-[10px] font-black uppercase italic tracking-widest">Tamanhos Disponíveis</p>
+                        <div className="flex gap-2 justify-center">
+                          {['P', 'M', 'G', 'GG'].map(size => (
+                            <span key={size} className="w-8 h-8 rounded border border-white/30 flex items-center justify-center text-xs font-black hover:bg-white hover:text-black transition-colors">{size}</span>
+                          ))}
+                        </div>
+                      </div>
                       <a 
-                        href={produto.link} 
+                        href={`https://wa.me/${data.botoes.hero_whatsapp_link.split('/').pop()}?text=Olá, quero saber mais sobre a ${produto.nome}`} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="btn-primary w-full py-4 text-xs shadow-2xl"
+                        className="btn-primary w-full py-4 text-xs shadow-2xl flex items-center justify-center gap-2 translate-y-4 group-hover:translate-y-0 transition-transform delay-75"
                       >
-                        VER PRODUTO
+                        <MessageCircle className="w-4 h-4" />
+                        COMPRAR VIA WHATSAPP
                       </a>
                     </div>
                   </div>
@@ -903,7 +982,10 @@ export default function App() {
                     <div>
                       <h4 className="text-white text-lg mb-3 font-black italic uppercase leading-tight group-hover:text-brand-red transition-colors">{produto.nome}</h4>
                       <div className="flex justify-between items-center">
-                        <span className="text-brand-green font-black italic text-2xl scoreboard-font">{produto.preco}</span>
+                        <div>
+                          <span className="text-brand-green font-black italic text-2xl scoreboard-font">{produto.preco}</span>
+                          <p className="text-[9px] text-zinc-500 font-bold uppercase mt-1">{produto.avaliacoes || 'Novidade'}</p>
+                        </div>
                         <div className="flex gap-1">
                           {[...Array(5)].map((_, j) => <Star key={j} className="w-3 h-3 text-brand-red fill-brand-red" />)}
                         </div>
@@ -937,19 +1019,25 @@ export default function App() {
               >
                 <div className="absolute -top-4 -left-4 w-12 h-12 bg-brand-red flex items-center justify-center text-white text-2xl font-black italic rounded-sm shadow-xl z-10">"</div>
                 <div className="flex items-center gap-5 mb-8">
-                  <div className="w-12 h-12 bg-brand-red/10 rounded-full flex items-center justify-center border border-brand-red/20">
-                    <User className="w-6 h-6 text-brand-red" />
+                  <div className="w-16 h-16 bg-brand-red/10 rounded-full flex items-center justify-center border border-brand-red/20 overflow-hidden">
+                    {dep.avatar ? (
+                      <SafeImage src={dep.avatar} alt={dep.nome} className="w-full h-full object-cover" />
+                    ) : (
+                      <User className="w-8 h-8 text-brand-red" />
+                    )}
                   </div>
                   <div>
                     <h4 className="text-white font-black italic uppercase tracking-widest text-sm">{dep.nome}</h4>
+                    <p className="text-[10px] text-zinc-500 font-bold uppercase">{dep.cidade || 'Brasil'}</p>
                     <div className="flex gap-0.5 mt-1">
                       {[...Array(5)].map((_, j) => <Star key={j} className="w-3 h-3 text-brand-red fill-brand-red" />)}
                     </div>
                   </div>
                 </div>
-                <p className="text-zinc-400 italic text-base leading-relaxed font-medium group-hover:text-white transition-colors">
+                <p className="text-zinc-400 italic text-base leading-relaxed font-medium group-hover:text-white transition-colors mb-6">
                   {dep.texto}
                 </p>
+                <span className="text-[9px] text-zinc-600 font-black uppercase tracking-widest block text-right italic">{dep.tempo || 'Comprou recentemente'}</span>
               </motion.div>
             ))}
           </div>
@@ -972,9 +1060,23 @@ export default function App() {
                 viewport={{ once: true }}
                 className="glass-card p-6 group hover:border-brand-red/30 transition-all"
               >
-                <div className="rounded-xl overflow-hidden border border-white/5 relative">
-                  <div className="absolute inset-0 bg-brand-red/10 opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none"></div>
-                  <SafeImage src={print.url} alt={print.legenda} className="w-full hover:scale-105 transition-transform duration-700" />
+                <div className="rounded-xl overflow-hidden border border-white/5 relative group-hover:border-brand-red/30 transition-all">
+                  <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] opacity-100 group-hover:opacity-0 transition-opacity z-10 flex items-center justify-center">
+                     <p className="text-white text-[10px] font-black uppercase italic tracking-[0.2em] bg-brand-red/80 px-4 py-2 rounded">Clica para revelar o print</p>
+                  </div>
+                  <div className="absolute top-4 right-4 z-20">
+                     <div className="bg-brand-green text-white text-[8px] font-black px-2 py-1 rounded-sm italic uppercase flex items-center gap-1 shadow-lg">
+                        <Check className="w-3 h-3" /> Compra confirmada
+                     </div>
+                  </div>
+                  <div className="absolute inset-0 bg-brand-red/10 opacity-0 group-hover:opacity-30 transition-opacity z-10 pointer-events-none"></div>
+                  <SafeImage src={print.url} alt={print.legenda} className="w-full hover:scale-105 transition-transform duration-700 blur-[4px] group-hover:blur-0" />
+                  
+                  <div className="absolute bottom-4 left-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+                     <div className="bg-white text-black text-[8px] font-black px-3 py-1.5 rounded shadow-xl flex items-center gap-2">
+                        <MessageCircle className="w-3 h-3" /> Mensagem real do WhatsApp
+                     </div>
+                  </div>
                 </div>
                 <div className="mt-6 flex items-center justify-between">
                   <p className="text-zinc-400 text-xs font-black uppercase italic tracking-widest">{print.legenda}</p>
@@ -1003,12 +1105,18 @@ export default function App() {
               viewport={{ once: true }}
               className="w-32 h-32 bg-brand-red rounded-3xl flex items-center justify-center mx-auto mb-12 shadow-[0_0_50px_rgba(255,0,0,0.5)] relative z-10"
             >
+              <div className="absolute -top-4 -right-4 bg-white text-brand-red p-2 rounded-full shadow-xl">
+                 <BadgeCheck className="w-8 h-8" />
+              </div>
               <ShieldCheck className="w-16 h-16 text-white" />
             </motion.div>
             
-            <h2 className="text-5xl md:text-8xl mb-8 italic font-black uppercase tracking-tighter leading-none">
-              {data.textos.garantia_titulo.split(' ')[0]} <span className="text-brand-red">{data.textos.garantia_titulo.split(' ')[1]}</span>
+            <h2 className="text-5xl md:text-8xl mb-4 italic font-black uppercase tracking-tighter leading-none">
+              GARANTIA <span className="text-brand-red">BLINDADA</span>
             </h2>
+            <div className="inline-block bg-brand-green/20 border border-brand-green/30 text-brand-green font-black italic uppercase px-4 py-1 rounded text-[10px] mb-8">
+               🛡️ 7 DIAS DE SEGURANÇA TOTAL
+            </div>
             <p className="text-zinc-400 max-w-3xl mx-auto mb-16 text-xl italic font-medium leading-relaxed">
               {data.textos.garantia_texto}
             </p>
@@ -1084,6 +1192,14 @@ export default function App() {
               viewport={{ once: true }}
               className="space-y-6"
             >
+              <div className="flex flex-col items-center gap-4 mb-8">
+                 <div className="bg-brand-red text-white font-black italic uppercase px-6 py-2 rounded-sm text-xs tracking-widest animate-pulse">
+                    🔥 O FERTA ENCERRA EM BREVE
+                 </div>
+                 <div className="flex items-center gap-2 text-zinc-500 font-bold uppercase text-[10px]">
+                    <Users className="w-4 h-4" /> Mais de 120 pessoas compraram hoje
+                 </div>
+              </div>
               <h2 className="text-5xl md:text-9xl font-black italic uppercase tracking-tighter leading-[0.85]">
                 VISTA A SUA <br/>
                 <span className="text-brand-red">PAIXÃO</span>
@@ -1091,6 +1207,9 @@ export default function App() {
               <p className="text-zinc-400 text-xl md:text-3xl font-medium italic">
                 Não assista ao jogo. Faça parte dele com o manto que você sempre sonhou.
               </p>
+              <div className="pt-8">
+                 <CountdownTimer />
+              </div>
             </motion.div>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
@@ -1179,6 +1298,29 @@ export default function App() {
           {data.botoes.final_whatsapp_texto}
         </div>
       </a>
+
+      {/* 🛎️ NOTIFICAÇÕES FAKE */}
+      <AnimatePresence>
+        {notification && (
+          <motion.div
+            initial={{ opacity: 0, x: -100 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -100 }}
+            className="fixed bottom-24 left-8 z-[100] bg-zinc-900 border border-white/10 rounded-xl p-4 shadow-2xl flex items-center gap-4 max-w-xs"
+          >
+            <div className="w-12 h-12 bg-brand-green rounded-full flex items-center justify-center text-white shrink-0 shadow-[0_0_20px_rgba(37,211,102,0.4)]">
+              <ShoppingBag className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-[10px] text-zinc-500 font-black uppercase tracking-widest mb-1 italic">Venda realizada!</p>
+              <p className="text-xs text-white font-medium leading-tight">
+                <span className="font-black italic text-brand-green uppercase">{notification.name}</span> de {notification.city} comprou {notification.product}
+              </p>
+              <p className="text-[8px] text-zinc-600 mt-1 uppercase font-bold">há 2 minutos • verificado</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ✅ NOTIFICAÇÃO DE SUCESSO */}
       <AnimatePresence>
@@ -1427,12 +1569,17 @@ export default function App() {
                     <div className="glass-card p-6">
                       <h3 className="text-xs font-black uppercase italic mb-6 text-brand-red flex justify-between items-center">
                         🗣️ Depoimentos
-                        <button onClick={() => updateLocalData({ ...data, depoimentos: [...data.depoimentos, { nome: "Novo Cliente", texto: "Depoimento aqui" }] })} className="btn-secondary py-2 px-4 text-[10px]">ADICIONAR</button>
+                        <button onClick={() => updateLocalData({ ...data, depoimentos: [...data.depoimentos, { nome: "Novo Cliente", texto: "Depoimento aqui", cidade: "São Paulo, SP", tempo: "há 2 dias", avatar: "" }] })} className="btn-secondary py-2 px-4 text-[10px]">ADICIONAR</button>
                       </h3>
-                      <div className="grid md:grid-cols-3 gap-4">
+                      <div className="grid md:grid-cols-2 gap-4">
                         {(data.depoimentos || []).map((dep, i) => (
                           <div key={i} className="p-4 bg-black/40 rounded border border-white/5 space-y-3">
                             <input type="text" value={dep.nome || ''} onChange={(e) => { const n = [...data.depoimentos]; n[i].nome = e.target.value; updateLocalData({ ...data, depoimentos: n }); }} placeholder="Nome do Cliente" className="w-full bg-black border border-white/10 p-2 text-xs" />
+                            <div className="grid grid-cols-2 gap-2">
+                              <input type="text" value={dep.cidade || ''} onChange={(e) => { const n = [...data.depoimentos]; n[i].cidade = e.target.value; updateLocalData({ ...data, depoimentos: n }); }} placeholder="Cidade/UF" className="w-full bg-black border border-white/10 p-2 text-xs" />
+                              <input type="text" value={dep.tempo || ''} onChange={(e) => { const n = [...data.depoimentos]; n[i].tempo = e.target.value; updateLocalData({ ...data, depoimentos: n }); }} placeholder="Tempo (ex: há 2 dias)" className="w-full bg-black border border-white/10 p-2 text-xs" />
+                            </div>
+                            <input type="text" value={dep.avatar || ''} onChange={(e) => { const n = [...data.depoimentos]; n[i].avatar = e.target.value; updateLocalData({ ...data, depoimentos: n }); }} placeholder="URL do Avatar" className="w-full bg-black border border-white/10 p-2 text-xs" />
                             <textarea value={dep.texto || ''} onChange={(e) => { const n = [...data.depoimentos]; n[i].texto = e.target.value; updateLocalData({ ...data, depoimentos: n }); }} placeholder="Depoimento" className="w-full bg-black border border-white/10 p-2 text-xs resize-none" rows={2} />
                             <button onClick={() => updateLocalData({ ...data, depoimentos: data.depoimentos.filter((_, idx) => idx !== i) })} className="text-[10px] text-brand-red uppercase font-black">Remover</button>
                           </div>
@@ -1507,7 +1654,7 @@ export default function App() {
                     <div className="glass-card p-6">
                       <h3 className="text-xs font-black uppercase italic mb-6 text-brand-red flex justify-between items-center">
                         👕 Nossos Mantos (Vitrine)
-                        <button onClick={() => updateLocalData({ ...data, produtos: [...(data.produtos || []), { nome: "Nova Camisa", preco: "R$ 161,49", imagem: "https://picsum.photos/seed/jersey/600/800.jpg", link: "https://lotsports.com.br" }] })} className="btn-secondary py-2 px-4 text-[10px]">ADICIONAR PRODUTO</button>
+                        <button onClick={() => updateLocalData({ ...data, produtos: [...(data.produtos || []), { nome: "Nova Camisa", preco: "R$ 161,49", imagem: "https://picsum.photos/seed/jersey/600/800.jpg", link: "https://lotsports.com.br", vendidosHoje: "15 vendidos hoje", estoque: "Estoque baixo", avaliacoes: "+40 avaliações" }] })} className="btn-secondary py-2 px-4 text-[10px]">ADICIONAR PRODUTO</button>
                       </h3>
                       <div className="bg-brand-red/10 border border-brand-red/20 rounded-lg p-3 mb-6">
                         <p className="text-[10px] text-brand-red font-black uppercase italic leading-tight">
@@ -1519,7 +1666,14 @@ export default function App() {
                         {(data.produtos || []).map((prod, i) => (
                           <div key={i} className="p-4 bg-black/40 rounded border border-white/5 space-y-2">
                             <input type="text" value={prod.nome || ''} onChange={(e) => { const n = [...data.produtos]; n[i].nome = e.target.value; updateLocalData({ ...data, produtos: n }); }} placeholder="Nome do Produto" className="w-full bg-black border border-white/10 p-2 text-xs" />
-                            <input type="text" value={prod.preco || ''} onChange={(e) => { const n = [...data.produtos]; n[i].preco = e.target.value; updateLocalData({ ...data, produtos: n }); }} placeholder="Preço (ex: R$ 161,49)" className="w-full bg-black border border-white/10 p-2 text-xs" />
+                            <div className="grid grid-cols-2 gap-2">
+                              <input type="text" value={prod.preco || ''} onChange={(e) => { const n = [...data.produtos]; n[i].preco = e.target.value; updateLocalData({ ...data, produtos: n }); }} placeholder="Preço (ex: R$ 161,49)" className="w-full bg-black border border-white/10 p-2 text-xs" />
+                              <input type="text" value={prod.avaliacoes || ''} onChange={(e) => { const n = [...data.produtos]; n[i].avaliacoes = e.target.value; updateLocalData({ ...data, produtos: n }); }} placeholder="Avaliações (ex: +100 avaliações)" className="w-full bg-black border border-white/10 p-2 text-xs" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <input type="text" value={prod.vendidosHoje || ''} onChange={(e) => { const n = [...data.produtos]; n[i].vendidosHoje = e.target.value; updateLocalData({ ...data, produtos: n }); }} placeholder="Vendidos (ex: 20 hoje)" className="w-full bg-black border border-white/10 p-2 text-xs" />
+                              <input type="text" value={prod.estoque || ''} onChange={(e) => { const n = [...data.produtos]; n[i].estoque = e.target.value; updateLocalData({ ...data, produtos: n }); }} placeholder="Estoque (ex: 5 unidades)" className="w-full bg-black border border-white/10 p-2 text-xs" />
+                            </div>
                             <input type="text" value={prod.imagem || ''} onChange={(e) => { const n = [...data.produtos]; n[i].imagem = e.target.value; updateLocalData({ ...data, produtos: n }); }} placeholder="URL da Imagem" className="w-full bg-black border border-white/10 p-2 text-[10px]" />
                             <input type="text" value={prod.link || ''} onChange={(e) => { const n = [...data.produtos]; n[i].link = e.target.value; updateLocalData({ ...data, produtos: n }); }} placeholder="Link do Produto" className="w-full bg-black border border-white/10 p-2 text-[10px]" />
                             <button onClick={() => updateLocalData({ ...data, produtos: data.produtos.filter((_, idx) => idx !== i) })} className="text-[10px] text-brand-red uppercase font-black">Remover Produto</button>

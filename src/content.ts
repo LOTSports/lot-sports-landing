@@ -53,11 +53,14 @@ export interface LandingData {
     video_vsl: string;
     thumbnail_vsl: string;
     imagem_hero: string;
-    prints: { url: string; legenda: string }[];
+    prints: { url: string; legenda: string; verificado?: boolean }[];
   };
   depoimentos: {
     nome: string;
     texto: string;
+    cidade: string;
+    tempo: string;
+    avatar?: string;
   }[];
   beneficios: {
     titulo: string;
@@ -79,6 +82,9 @@ export interface LandingData {
     preco: string;
     imagem: string;
     link: string;
+    vendidosHoje?: string;
+    estoque?: string;
+    avaliacoes?: string;
   }[];
 }
 
@@ -102,8 +108,8 @@ export const defaultData: LandingData = {
     faq_titulo: "DÚVIDAS FREQUENTES",
     como_funciona_titulo: "COMO FUNCIONA O PROCESSO?",
     garantia_titulo: "SATISFAÇÃO GARANTIDA",
-    garantia_texto: "Ou você ama ou devolvemos seu dinheiro. Oferecemos 7 dias de garantia incondicional.",
-    cta_final_titulo: "NÃO PERCA ESSA PROMOÇÃO",
+    garantia_texto: "Se não gostar, devolvemos 100% do seu dinheiro. Sem perguntas. Oferecemos 7 dias de garantia incondicional.",
+    cta_final_titulo: "VISTA A SUA PAIXÃO",
     cta_final_subtitulo: "Leve 3, pague 2 ainda disponível. Escolha seu time agora."
   },
   precos: {
@@ -118,7 +124,7 @@ export const defaultData: LandingData = {
   botoes: {
     hero_whatsapp_texto: "Falar no WhatsApp",
     hero_whatsapp_link: "https://wa.me/5511999999999",
-    hero_site_texto: "QUERO MINHA CAMISA AGORA",
+    hero_site_texto: "QUERO MEU MANTO AGORA",
     hero_link: "https://lotsports.com.br",
     oferta_cta_texto: "GARANTIR MINHAS CAMISAS",
     oferta_cta_link: "https://lotsports.com.br",
@@ -131,22 +137,31 @@ export const defaultData: LandingData = {
     thumbnail_vsl: "https://picsum.photos/seed/vsl-thumb/1280/720.jpg",
     imagem_hero: "https://picsum.photos/seed/hero/1920/1080.jpg",
     prints: [
-      { url: "https://picsum.photos/seed/proof-1/800/600.jpg", legenda: "Cliente satisfeito no WhatsApp" },
-      { url: "https://picsum.photos/seed/proof-2/800/600.jpg", legenda: "Unboxing real do produto" }
+      { url: "https://picsum.photos/seed/proof-1/800/1200.jpg", legenda: "Cliente satisfeito no WhatsApp", verificado: true },
+      { url: "https://picsum.photos/seed/proof-2/800/1200.jpg", legenda: "Unboxing real do produto", verificado: true }
     ]
   },
   depoimentos: [
     {
-      nome: "Ricardo S.",
-      texto: "Qualidade absurda, parece original! Comprei 3 e vou comprar mais!"
+      nome: "Ricardo Santos",
+      texto: "Qualidade absurda, parece original! Comprei 3 e vou comprar mais!",
+      cidade: "São Paulo, SP",
+      tempo: "há 2 dias",
+      avatar: "https://i.pravatar.cc/150?u=ricardo"
     },
     {
-      nome: "Juliana M.",
-      texto: "Entrega rápida e produto top! O atendimento no WhatsApp foi excelente."
+      nome: "Juliana Mendes",
+      texto: "Entrega rápida e produto top! O atendimento no WhatsApp foi excelente.",
+      cidade: "Curitiba, PR",
+      tempo: "há 1 semana",
+      avatar: "https://i.pravatar.cc/150?u=juliana"
     },
     {
-      nome: "Marcos P.",
-      texto: "Melhor custo-benefício que já encontrei. As camisas são impecáveis."
+      nome: "Marcos Pereira",
+      texto: "Melhor custo-benefício que já encontrei. As camisas são impecáveis.",
+      cidade: "Fortaleza, CE",
+      tempo: "há 3 dias",
+      avatar: "https://i.pravatar.cc/150?u=marcos"
     }
   ],
   beneficios: [
@@ -169,12 +184,20 @@ export const defaultData: LandingData = {
   ],
   faq: [
     {
-      pergunta: "É igual a original?",
-      resposta: "Nossas camisas são versão torcedor com altíssima qualidade, utilizando os mesmos padrões de tecido e acabamento premium das oficiais."
+      pergunta: "É original ou réplica premium?",
+      resposta: "Nossas camisas são Versão Torcedor (Premium 1:1), feitas com o mesmo tecido, bordados e acabamentos das oficiais. É impossível notar a diferença sem ser um especialista."
     },
     {
       pergunta: "Quanto tempo demora?",
-      resposta: "O prazo médio de entrega é de 12 a 20 dias úteis, com rastreio completo enviado para seu e-mail e WhatsApp."
+      resposta: "O prazo médio de entrega é de 12 a 20 dias úteis. Enviamos o código de rastreio em até 3 dias após a compra."
+    },
+    {
+      pergunta: "Tem troca de tamanho?",
+      resposta: "Sim! Se não servir, você tem 7 dias após o recebimento para solicitar a troca seguindo nossa política de trocas e devoluções."
+    },
+    {
+      pergunta: "Posso pagar na entrega?",
+      resposta: "Atualmente aceitamos Pix (com desconto) e Cartão de crédito em até 12x. O pagamento é processado via gateways 100% seguros para sua proteção."
     }
   ],
   redes: {
@@ -193,25 +216,37 @@ export const defaultData: LandingData = {
       nome: "Camisa Brasil Home 2024",
       preco: "R$ 161,49",
       imagem: "https://picsum.photos/seed/br-2024/600/800.jpg",
-      link: "https://lotsports.com.br/produto/brasil-home-2024"
+      link: "https://lotsports.com.br/produto/brasil-home-2024",
+      vendidosHoje: "27 vendidos hoje",
+      estoque: "Últimas unidades",
+      avaliacoes: "+142 avaliações"
     },
     {
       nome: "Camisa Flamengo Home 2024",
       preco: "R$ 161,49",
       imagem: "https://picsum.photos/seed/fla-2024/600/800.jpg",
-      link: "https://lotsports.com.br/produto/flamengo-home-2024"
+      link: "https://lotsports.com.br/produto/flamengo-home-2024",
+      vendidosHoje: "19 vendidos hoje",
+      estoque: "Estoque baixo",
+      avaliacoes: "+89 avaliações"
     },
     {
       nome: "Camisa Real Madrid 2024",
       preco: "R$ 161,49",
       imagem: "https://picsum.photos/seed/real-2024/600/800.jpg",
-      link: "https://lotsports.com.br/produto/real-madrid-2024"
+      link: "https://lotsports.com.br/produto/real-madrid-2024",
+      vendidosHoje: "34 vendidos hoje",
+      estoque: "Últimas unidades",
+      avaliacoes: "+215 avaliações"
     },
     {
       nome: "Camisa Inter Miami 2024",
       preco: "R$ 161,49",
       imagem: "https://picsum.photos/seed/miami-2024/600/800.jpg",
-      link: "https://lotsports.com.br/produto/inter-miami-2024"
+      link: "https://lotsports.com.br/produto/inter-miami-2024",
+      vendidosHoje: "12 vendidos hoje",
+      estoque: "Estoque médio",
+      avaliacoes: "+56 avaliações"
     }
   ]
 };
