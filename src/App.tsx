@@ -367,11 +367,11 @@ export default function App() {
       .channel('landing_sync')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'config', filter: 'id=eq.1' },
+        { event: '*', schema: 'public', table: 'landing_data' },
         (payload: any) => {
           console.log('🔄 Mudança detectada no Supabase!', payload);
-          if (payload.new && payload.new.data) {
-            setData(mergeWithDefault(payload.new.data));
+          if (payload.new && payload.new.dados) {
+            setData(mergeWithDefault(payload.new.dados));
           }
         }
       )
@@ -394,10 +394,10 @@ export default function App() {
     }
 
     // 2. Carregar dados do Supabase (PARA TODOS)
-    fetchDataSync();
+    loadData();
   }, []);
 
-  const fetchDataSync = async () => {
+  const loadData = async () => {
     if (!supabase) {
       console.log('Sincronização desativada: Supabase não configurado.');
       setIsLoading(false);
@@ -407,53 +407,21 @@ export default function App() {
     try {
       setIsLoading(true);
       
-      // Tentar buscar configuração principal (JSON)
-      const { data: dbData, error: jsonError } = await supabase
-        .from('config')
-        .select('data')
-        .eq('id', 1)
-        .single();
+      const { data: result, error } = await supabase
+        .from('landing_data')
+        .select('*')
+        .limit(1)
+        .maybeSingle();
 
-      if (dbData?.data) {
-        const merged = mergeWithDefault(dbData.data);
+      if (error) throw error;
+
+      if (result?.dados) {
+        const merged = mergeWithDefault(result.dados);
         setData(merged);
-        console.log('Sincronização OK (JSON)');
-        setIsLoading(false);
-        return;
-      }
-
-      // Se falhar o JSON, tentar buscar por chave/valor
-      const { data: kvData, error: kvError } = await supabase
-        .from('config')
-        .select('*');
-
-      if (kvData && kvData.length > 0) {
-        const obj: any = {};
-        kvData.forEach((item: any) => {
-          if (item.chave && item.valor) {
-            obj[item.chave] = item.valor;
-          }
-        });
-        
-        // Se conseguimos dados via KV, aplicamos os principais
-        // Nota: Isso é um fallback para campos isolados
-        console.log('Sincronização OK (K/V)', obj);
-        
-        // Re-mapear para a estrutura LandingData se possível, ou pelo menos atualizar o que temos
-        setData(prev => {
-          const newData = { ...prev };
-          if (obj.headline_principal) newData.textos.headline_principal = obj.headline_principal;
-          if (obj.hero_preco_destaque) newData.precos.hero_preco_destaque = obj.hero_preco_destaque;
-          if (obj.video_vsl) newData.midia.video_vsl = obj.video_vsl;
-          return newData;
-        });
-      }
-
-      if (jsonError && jsonError.code !== 'PGRST116') {
-        console.error('Erro na sincronização:', jsonError);
+        console.log('Dados carregados com sucesso do Supabase');
       }
     } catch (err) {
-      console.error('Erro crítico no carregamento:', err);
+      console.error('Erro ao carregar dados:', err);
     } finally {
       setIsLoading(false);
     }
@@ -489,30 +457,52 @@ export default function App() {
 
   const syncWithSupabase = async () => {
     if (!supabase) {
-      alert('Configuração do Supabase ausente. Verifique as variáveis de ambiente VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.');
+      alert('Configuração do Supabase ausente.');
       return;
     }
 
-    setIsSaving(true);
     try {
-      console.log('Salvando dados no Supabase...', data);
-      const { error } = await supabase
-        .from('config')
-        .upsert({ id: 1, data: data, updated_at: new Date() });
+      setIsSaving(true);
+      console.log("Tentando salvar dados no Supabase:", data);
 
-      if (error) {
-        console.error('Erro ao salvar no Supabase:', error);
-        alert('Erro ao salvar dados: ' + error.message);
+      // 1. Verificar se já existe um registro
+      const { data: existing, error: fetchError } = await supabase
+        .from('landing_data')
+        .select('*')
+        .limit(1)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+
+      let response;
+
+      if (existing) {
+        // 2a. Se existe, faz UPDATE
+        console.log("Registro existente encontrado (ID:", existing.id, "). Fazendo UPDATE...");
+        response = await supabase
+          .from('landing_data')
+          .update({ dados: data })
+          .eq('id', existing.id);
       } else {
-        console.log('Dados salvos com sucesso!');
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 3000);
-        
-        // Recarregar para garantir consistência total
-        await fetchDataSync();
+        // 2b. Se não existe, faz INSERT
+        console.log("Nenhum registro encontrado. Fazendo INSERT...");
+        response = await supabase
+          .from('landing_data')
+          .insert({ dados: data });
       }
-    } catch (err) {
-      console.error('Erro inesperado ao salvar:', err);
+
+      console.log("Resposta do Supabase:", response);
+
+      if (response.error) throw response.error;
+
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+      
+      // Recarregar para garantir consistência total
+      await loadData();
+    } catch (err: any) {
+      console.error('Erro ao salvar no Supabase:', err);
+      alert('Erro ao salvar: ' + (err.message || 'Erro desconhecido'));
     } finally {
       setIsSaving(false);
     }
