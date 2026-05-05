@@ -1,25 +1,21 @@
 import { createClient } from '@supabase/supabase-js';
 
-let supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// 🔥 CONFIGURAÇÃO DIRETA (fallback seguro)
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://sjzrfkdxscyumvplspqh.supabase.co";
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpcXMiOiJzdXBhYmFzZSIsInJlZiI6InNqenJma2R4c2N5dW12cGxzcHFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MzYwMTIsImV4cCI6MjA5MzUxMjAxMn0.FISX8hh6O14mDJlBOFjk7PsyahKNd15v2puvXMqZgtk";
 
-// Auto-fix: Se o usuário colou a URL do dashboard, tentamos converter para a URL da API
-if (supabaseUrl && supabaseUrl.includes('supabase.com/dashboard')) {
-  const projectIdMatch = supabaseUrl.match(/project\/([a-z0-9]+)/);
-  if (projectIdMatch) {
-    const projectId = projectIdMatch[1];
-    supabaseUrl = `https://${projectId}.supabase.co`;
-    console.warn(`AVISO: Você usou a URL do Dashboard. Convertendo automaticamente para a URL da API: ${supabaseUrl}`);
-  } else {
-    console.error('ERRO: Você está usando a URL do Dashboard do Supabase e não conseguimos extrair o ID do projeto. Use a URL da API (ex: https://xxx.supabase.co)');
+// 🧠 VALIDAÇÃO FORTE
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.error('❌ Supabase ENV NÃO configurado corretamente.');
+  throw new Error('Supabase não configurado');
+}
+
+// 🚀 CLIENTE ÚNICO
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: false
   }
-}
+});
 
-// Only initialize if we have the credentials
-export const supabase = (supabaseUrl && supabaseAnonKey && !supabaseUrl.includes('supabase.com/dashboard')) 
-  ? createClient(supabaseUrl, supabaseAnonKey) 
-  : null;
-
-if (!supabase) {
-  console.warn('Supabase credentials missing. Real-time sync will be disabled.');
-}
+// 🔍 LOG DE DEBUG (remova em produção se quiser)
+console.log('✅ Supabase conectado:', SUPABASE_URL);
