@@ -406,22 +406,30 @@ export default function App() {
 
     try {
       setIsLoading(true);
+      console.log("🔍 CARREGANDO DADOS DO SUPABASE...");
       
       const { data: result, error } = await supabase
         .from('landing_data')
         .select('*')
+        .order('updated_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro ao carregar dados:', error);
+        throw error;
+      }
 
       if (result?.dados) {
-        const merged = mergeWithDefault(result.dados);
+        const dataFromDb = result.dados;
+        console.log("✅ DADOS CARREGADOS:", dataFromDb);
+        const merged = mergeWithDefault(dataFromDb);
         setData(merged);
-        console.log('Dados carregados com sucesso do Supabase');
+      } else {
+        console.log("ℹ️ Nenhum dado encontrado no banco, usando padrão.");
       }
     } catch (err) {
-      console.error('Erro ao carregar dados:', err);
+      console.error('❌ Erro crítico no carregamento:', err);
     } finally {
       setIsLoading(false);
     }
@@ -463,46 +471,46 @@ export default function App() {
 
     try {
       setIsSaving(true);
-      console.log("Tentando salvar dados no Supabase:", data);
+      console.log("🚀 SALVANDO NO SUPABASE:", data);
 
-      // 1. Verificar se já existe um registro
-      const { data: existing, error: fetchError } = await supabase
+      // Usamos uma estratégia de manter um único registro ou atualizar o último
+      // Buscamos o ID do registro existente para garantir que fazemos o override do mesmo
+      const { data: existing } = await supabase
         .from('landing_data')
-        .select('*')
+        .select('id')
+        .order('updated_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 
-      if (fetchError) throw fetchError;
+      const payload = {
+        dados: data,
+        updated_at: new Date().toISOString()
+      };
 
-      let response;
-
-      if (existing) {
-        // 2a. Se existe, faz UPDATE
-        console.log("Registro existente encontrado (ID:", existing.id, "). Fazendo UPDATE...");
-        response = await supabase
-          .from('landing_data')
-          .update({ dados: data })
-          .eq('id', existing.id);
-      } else {
-        // 2b. Se não existe, faz INSERT
-        console.log("Nenhum registro encontrado. Fazendo INSERT...");
-        response = await supabase
-          .from('landing_data')
-          .insert({ dados: data });
+      // Se existir, incluímos o ID para que o upsert atualize o registro correto
+      if (existing?.id) {
+        (payload as any).id = existing.id;
       }
 
-      console.log("Resposta do Supabase:", response);
+      const { error, data: response } = await supabase
+        .from('landing_data')
+        .upsert([payload])
+        .select();
 
-      if (response.error) throw response.error;
+      if (error) {
+        console.error('❌ Erro ao salvar no Supabase:', error);
+        throw error;
+      }
 
+      console.log("✅ Resposta Supabase (Salvo):", response);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
       
-      // Recarregar para garantir consistência total
+      // Recarregar para garantir sincronia total
       await loadData();
     } catch (err: any) {
-      console.error('Erro ao salvar no Supabase:', err);
-      alert('Erro ao salvar: ' + (err.message || 'Erro desconhecido'));
+      console.error('❌ Erro ao salvar:', err);
+      alert('Erro ao salvar alterações! Verifique o console.');
     } finally {
       setIsSaving(false);
     }
