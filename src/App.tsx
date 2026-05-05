@@ -357,6 +357,33 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
+  // 🔄 SINCRONIZAÇÃO EM TEMPO REAL (REALTIME)
+  useEffect(() => {
+    if (!supabase) return;
+
+    console.log('Iniciando Realtime para sincronização global...');
+    
+    const channel = supabase
+      .channel('landing_sync')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'config', filter: 'id=eq.1' },
+        (payload: any) => {
+          console.log('🔄 Mudança detectada no Supabase!', payload);
+          if (payload.new && payload.new.data) {
+            setData(mergeWithDefault(payload.new.data));
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('Status da inscrição Realtime:', status);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   // Carregar dados do Supabase ao montar
   useEffect(() => {
     // 1. Verificar acesso secreto (Admin)
@@ -455,8 +482,9 @@ export default function App() {
   };
 
   const updateLocalData = (newData: LandingData) => {
+    // Atualiza apenas o estado React para resposta imediata na UI (preview)
+    // O salvamento real ocorre apenas ao clicar em "Salvar" no admin
     setData(newData);
-    localStorage.setItem('lotsports_landing_data', JSON.stringify(newData));
   };
 
   const syncWithSupabase = async () => {
@@ -467,18 +495,24 @@ export default function App() {
 
     setIsSaving(true);
     try {
+      console.log('Salvando dados no Supabase...', data);
       const { error } = await supabase
         .from('config')
-        .upsert({ id: 1, data: data });
+        .upsert({ id: 1, data: data, updated_at: new Date() });
 
       if (error) {
         console.error('Erro ao salvar no Supabase:', error);
+        alert('Erro ao salvar dados: ' + error.message);
       } else {
+        console.log('Dados salvos com sucesso!');
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 3000);
+        
+        // Recarregar para garantir consistência total
+        await fetchDataSync();
       }
     } catch (err) {
-      console.error('Erro ao salvar dados:', err);
+      console.error('Erro inesperado ao salvar:', err);
     } finally {
       setIsSaving(false);
     }
